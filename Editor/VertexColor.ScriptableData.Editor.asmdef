@@ -1,0 +1,18 @@
+{
+    "name": "VertexColor.ScriptableData.Editor",
+    "rootNamespace": "ScriptableData.Editor",
+    "references": [
+        "GUID:bd2fa452e376b7e4e8356eed741e5eea"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

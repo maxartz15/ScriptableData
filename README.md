@@ -33,6 +33,13 @@ public class ScriptableEvent<T0, T1, T2, T3> : ScriptableObject {}
 [CreateAssetMenu(menuName = "ScriptableData/Event/Vector3", order = 147)]
 public class SEVector3 : ScriptableEvent<Vector3> {}
 ```
+## ExtendedScriptableObjectDrawer
+If you don't want to use the extended drawer, use the `[NonExpandable]` attribute.
+### Example:
+```C#
+[NonExpandable]
+public SEVector3 myVector3;
+```
 
 ## Install
 [Installing from a Git URL](https://docs.unity3d.com/Manual/upm-ui-giturl.html)
