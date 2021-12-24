@@ -1,218 +1,154 @@
-// References:
+﻿// References:
 // https://gist.github.com/tomkail/ba4136e6aa990f4dc94e0d39ec6a058c
 // Developed by Tom Kail at Inkle
 // Released under the MIT Licence as held at https://opensource.org/licenses/MIT
 
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
-using Object = UnityEngine.Object;
 
 namespace ScriptableData.Editor
 {
-    [CustomPropertyDrawer(typeof(ScriptableObject), true)]
-    public class ExtendedScriptableObjectDrawer : PropertyDrawer
-    {
-        private static readonly string[] ignoreClassFullNames = new string[] { "TMPro.TMP_FontAsset" };
-        private const int buttonWidth = 20;
+	[CustomPropertyDrawer(typeof(ScriptableObject), true)]
+	public class ExtendedScriptableObjectDrawer : PropertyDrawer
+	{
+		// Permamently exclude classes from being affected by the drawer.
+		private static readonly string[] ignoredFullClassNames = new string[] { "TMPro.TMP_FontAsset" };
+		private const int buttonWidth = 20;
 
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            float totalHeight = EditorGUIUtility.singleLineHeight;
-            if (property.objectReferenceValue == null || !HasVisableSubProperties(property) || fieldInfo.HasAttribute<NonExtendableAttribute>())
-            {
-                return totalHeight;
-            }
+		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+		{
+			float totalHeight = EditorGUIUtility.singleLineHeight;
 
-            if (property.isExpanded)
-            {
-				ScriptableObject data = property.objectReferenceValue as ScriptableObject;
+			SerializedObject serializedObject = null;
+			if (property.objectReferenceValue is ScriptableObject scriptableObject)
+			{
+				serializedObject = new SerializedObject(scriptableObject);
+			}
 
-                if (data == null)
-                { 
-                    return EditorGUIUtility.singleLineHeight;
-                }
+			if (serializedObject == null || !serializedObject.HasVisableSubProperties() || fieldInfo.HasAttribute<NonExtendableAttribute>())
+			{
+				return totalHeight;
+			}
 
-                SerializedObject serializedObject = new SerializedObject(data);
-                SerializedProperty prop = serializedObject.GetIterator();
-                if (prop.NextVisible(true))
-                {
-                    do
-                    {
-                        if (prop.name == "m_Script")
-                        { 
-                            continue;
-                        }
+			if (property.isExpanded)
+			{
+				// Iterate over all the values and draw them.
+				SerializedProperty p = serializedObject.GetIterator();
 
-						SerializedProperty subProp = serializedObject.FindProperty(prop.name);
-                        float height = EditorGUI.GetPropertyHeight(subProp, null, true) + EditorGUIUtility.standardVerticalSpacing;
-                        totalHeight += height;
-                    }
-                    while (prop.NextVisible(false));
-                }
-                // Add a tiny bit of height if open for the background
-                totalHeight += EditorGUIUtility.standardVerticalSpacing;
-            }
+				if (p.NextVisible(true))
+				{
+					do
+					{
+						// Skip drawing the class file.
+						if (EditorUtils.IsIgnoredProperty(p))
+						{
+							continue;
+						}
 
-            return totalHeight;
-        }
+						float height = EditorGUI.GetPropertyHeight(p, null, true) + EditorGUIUtility.standardVerticalSpacing;
+						totalHeight += height;
+					}
+					while (p.NextVisible(false));
+				}
 
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        {
-            EditorGUI.BeginProperty(position, label, property);
+				// Add a tiny bit of height if open for the background
+				totalHeight += EditorGUIUtility.standardVerticalSpacing;
+			}
+
+			return totalHeight;
+		}
+
+		public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+		{
+			EditorGUI.BeginProperty(position, label, property);
 
 			Type fieldType = EditorUtils.GetFieldType(fieldInfo);
 
-            if (fieldType == null || HasIgnoredClassName(fieldType) || fieldInfo.HasAttribute<NonExtendableAttribute>())
-            {
-                EditorGUI.PropertyField(position, property, label);
-                EditorGUI.EndProperty();
-                return;
-            }
+			// Draw with default drawer.
+			if (fieldType == null || HasIgnoredClassName(fieldType) || fieldInfo.HasAttribute<NonExtendableAttribute>())
+			{
+				EditorGUI.PropertyField(position, property, label);
+				EditorGUI.EndProperty();
+				return;
+			}
 
-            ScriptableObject propertySO = null;
-            if (!property.hasMultipleDifferentValues && property.serializedObject.targetObject != null && property.serializedObject.targetObject is ScriptableObject)
-            {
-                propertySO = property.serializedObject.targetObject as ScriptableObject;
-            }
-
-            GUIContent guiContent = new GUIContent(property.displayName);
 			Rect foldoutRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
-            if (property.objectReferenceValue != null && HasVisableSubProperties(property))
-            {
-                property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, guiContent, true);
-            }
-            else
-            {
-                foldoutRect.x += 10;
-                EditorGUI.Foldout(foldoutRect, property.isExpanded, guiContent, true, EditorStyles.label);
-            }
-
 			Rect indentedPosition = EditorGUI.IndentedRect(position);
 			float indentOffset = indentedPosition.x - position.x;
-            Rect propertyRect = new Rect(position.x + (EditorGUIUtility.labelWidth - indentOffset + 2), position.y, position.width - (EditorGUIUtility.labelWidth - indentOffset + 2), EditorGUIUtility.singleLineHeight);
+			Rect propertyRect = new Rect(position.x + (EditorGUIUtility.labelWidth - indentOffset + 2), position.y, position.width - (EditorGUIUtility.labelWidth - indentOffset + 2), EditorGUIUtility.singleLineHeight);
 
-            if (propertySO != null || property.objectReferenceValue == null)
-            {
-                propertyRect.width -= buttonWidth;
-            }
+			SerializedObject serializedObject = null;
+			if(property.objectReferenceValue is ScriptableObject scriptableObject)
+			{
+				serializedObject = new SerializedObject(scriptableObject);
+			}
 
-            EditorGUI.BeginChangeCheck();
+			// Check for sub properties and if the property can be expanded.
+			if (serializedObject != null && serializedObject.HasVisableSubProperties())
+			{
+				property.isExpanded = EditorGUI.Foldout(foldoutRect, property.isExpanded, new GUIContent(property.displayName), true);
 
-            Object assignedObject = EditorGUI.ObjectField(propertyRect, GUIContent.none, property.objectReferenceValue, fieldType, false);
+				if (property.isExpanded)
+				{
+					// Draw sub properties.
+					serializedObject.Draw(position);
+				}
+			}
+			else
+			{
+				EditorGUI.LabelField(foldoutRect, new GUIContent(property.displayName));
 
-            if (EditorGUI.EndChangeCheck())
-            {
-                property.objectReferenceValue = assignedObject;
-                property.serializedObject.ApplyModifiedProperties();
-            }
+				if (property.objectReferenceValue == null)
+				{
+					propertyRect.width -= buttonWidth;
 
-			Rect buttonRect = new Rect(position.x + position.width - buttonWidth, position.y, buttonWidth, EditorGUIUtility.singleLineHeight);
+					// Draw create button.
+					Rect buttonRect = new Rect(position.x + position.width - buttonWidth, position.y, buttonWidth, EditorGUIUtility.singleLineHeight);
+					DrawScriptableObjectCreateButton(buttonRect, property, fieldType);
+				}
+			}
 
-            if (property.propertyType == SerializedPropertyType.ObjectReference && property.objectReferenceValue != null)
-            {
-                if (property.isExpanded)
-                {
-                    DrawScriptableObjectChildFields(position, property);
-                }
-            }
-            else
-            {
-                DrawScriptableObjectCreateButton(buttonRect, property, fieldType);
-            }
+			EditorGUI.BeginChangeCheck();
+			// Draw object field.
+			EditorGUI.PropertyField(propertyRect, property, GUIContent.none, false);
 
-            property.serializedObject.ApplyModifiedProperties();
-            EditorGUI.EndProperty();
-        }
+			if (EditorGUI.EndChangeCheck())
+			{
+				property.serializedObject.ApplyModifiedProperties();
+			}
 
-        private void DrawScriptableObjectChildFields(Rect position, SerializedProperty property)
+			property.serializedObject.ApplyModifiedProperties();
+			EditorGUI.EndProperty();
+		}
+
+		private static void DrawScriptableObjectCreateButton(Rect position, SerializedProperty property, Type type)
 		{
-            ScriptableObject scriptableObject = (ScriptableObject)property.objectReferenceValue;
+			if (GUI.Button(position, "+"))
+			{
+				GenericMenu typeChooser = new GenericMenu();
+				IEnumerable<Type> types = type.Assembly.GetTypes().Where(t => type.IsAssignableFrom(t));
+				foreach (Type t in types)
+				{
+					if (t.IsAbstract)
+					{
+						continue;
+					}
 
-            if (scriptableObject == null)
-            {
-                return;
-            }
+					typeChooser.AddItem(new GUIContent(t.Name), false, (o) => {
+						property.objectReferenceValue = EditorUtils.CreateAssetWithSavePrompt(o as Type, EditorUtils.GetSelectedAssetPath(property));
+						property.serializedObject.ApplyModifiedProperties();
+					}, t);
+				}
+				typeChooser.ShowAsContext();
+			}
+		}
 
-            // Draw a background that shows us clearly which fields are part of the ScriptableObject
-            GUI.Box(new Rect(position.x, position.y + EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing - 1, position.width, position.height - EditorGUIUtility.singleLineHeight - EditorGUIUtility.standardVerticalSpacing), "");
-
-            EditorGUI.indentLevel++;
-            SerializedObject serializedObject = new SerializedObject(scriptableObject);
-
-            // Iterate over all the values and draw them
-            SerializedProperty prop = serializedObject.GetIterator();
-            float y = position.y + EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
-
-            EditorGUI.BeginChangeCheck();
-
-            if (prop.NextVisible(true))
-            {
-                do
-                {
-                    // Don't bother drawing the class file
-                    if (prop.name == "m_Script") continue;
-                    float height = EditorGUI.GetPropertyHeight(prop, new GUIContent(prop.displayName), true);
-                    EditorGUI.PropertyField(new Rect(position.x, y, position.width /*- buttonWidth*/, height), prop, true);
-                    y += height + EditorGUIUtility.standardVerticalSpacing;
-                }
-                while (prop.NextVisible(false));
-            }
-
-            if (EditorGUI.EndChangeCheck())
-            {
-                serializedObject.ApplyModifiedProperties();
-            }
-
-            EditorGUI.indentLevel--;
-        }
-
-        private void DrawScriptableObjectCreateButton(Rect position, SerializedProperty property, Type type)
+		private static bool HasIgnoredClassName(Type type)
 		{
-            if (GUI.Button(position, "+"))
-            {
-                if (type.IsAbstract)
-                {
-                    GenericMenu typeChooser = new GenericMenu();
-                    foreach (var elem in type.Assembly.GetTypes().Where(t => type.IsAssignableFrom(t)))
-                    {
-                        if (elem.IsAbstract) continue;
-
-                        typeChooser.AddItem(new GUIContent(elem.Name), false, (elem) => {
-                            property.objectReferenceValue = EditorUtils.CreateAssetWithSavePrompt(elem as Type, EditorUtils.GetSelectedAssetPath(property));
-                            property.serializedObject.ApplyModifiedProperties();
-                        }, elem);
-                    }
-                    typeChooser.ShowAsContext();
-                }
-                else
-                {
-                    property.objectReferenceValue = EditorUtils.CreateAssetWithSavePrompt(type, EditorUtils.GetSelectedAssetPath(property));
-                }
-            }
-        }
-
-        private bool HasIgnoredClassName(Type type)
-		{
-            return ignoreClassFullNames.Contains(type.FullName);
-        }
-
-        private bool HasVisableSubProperties(SerializedProperty property)
-		{
-            ScriptableObject scriptableObject = (ScriptableObject)property.objectReferenceValue;
-
-            if (scriptableObject != null)
-            {
-                SerializedObject serializedObject = new SerializedObject(scriptableObject);
-                SerializedProperty prop = serializedObject.GetIterator();
-                while (prop.NextVisible(true))
-                {
-                    if (prop.name == "m_Script") continue;
-                    return true; //if theres any visible property other than m_script
-                }
-            }
-            return false;
-        }
-    }
+			return ignoredFullClassNames.Contains(type.FullName);
+		}
+	}
 }
