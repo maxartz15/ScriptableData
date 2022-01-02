@@ -1,4 +1,6 @@
 # Change Log:
+## 1.1.2
+- Fixed private fields in ScriptableObject getting serialized.
 ## 1.1.1
 - Instance indicator colors.
 - Code refactor.

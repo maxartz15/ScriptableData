@@ -7,7 +7,7 @@ namespace ScriptableData
 	{
 		public event Action<T0> OnValueChangedEvent;
 
-		private T0 _value;
+		[NonSerialized] private T0 _value;
 		public T0 Value
 		{
 			get
@@ -37,7 +37,7 @@ namespace ScriptableData
 	{
 		public event Action<T0, T1> OnValueChangedEvent;
 
-		private T0 _value;
+		[NonSerialized] private T0 _value;
 		public T0 Value
 		{
 			get
@@ -51,7 +51,7 @@ namespace ScriptableData
 			}
 		}
 
-		private T1 _value1;
+		[NonSerialized] private T1 _value1;
 		public T1 Value1
 		{
 			get
@@ -88,7 +88,7 @@ namespace ScriptableData
 	{
 		public event Action<T0, T1, T2> OnValueChangedEvent;
 
-		private T0 _value;
+		[NonSerialized] private T0 _value;
 		public T0 Value
 		{
 			get
@@ -102,7 +102,7 @@ namespace ScriptableData
 			}
 		}
 
-		private T1 _value1;
+		[NonSerialized] private T1 _value1;
 		public T1 Value1
 		{
 			get
@@ -116,7 +116,7 @@ namespace ScriptableData
 			}
 		}
 
-		private T2 _value2;
+		[NonSerialized] private T2 _value2;
 		public T2 Value2
 		{
 			get
@@ -161,7 +161,7 @@ namespace ScriptableData
 	{
 		public event Action<T0, T1, T2, T3> OnValueChangedEvent;
 
-		private T0 _value;
+		[NonSerialized] private T0 _value;
 		public T0 Value
 		{
 			get
@@ -175,7 +175,7 @@ namespace ScriptableData
 			}
 		}
 
-		private T1 _value1;
+		[NonSerialized] private T1 _value1;
 		public T1 Value1
 		{
 			get
@@ -189,7 +189,7 @@ namespace ScriptableData
 			}
 		}
 
-		private T2 _value2;
+		[NonSerialized] private T2 _value2;
 		public T2 Value2
 		{
 			get
@@ -203,7 +203,7 @@ namespace ScriptableData
 			}
 		}
 
-		private T3 _value3;
+		[NonSerialized] private T3 _value3;
 		public T3 Value3
 		{
 			get
