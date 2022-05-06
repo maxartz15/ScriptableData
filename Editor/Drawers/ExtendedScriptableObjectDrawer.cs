@@ -16,7 +16,8 @@ namespace ScriptableData.Editor
 	{
 		// Permamently exclude classes from being affected by the drawer.
 		private static readonly string[] ignoredFullClassNames = new string[] { "TMPro.TMP_FontAsset" };
-		private const int buttonWidth = 20;
+		private static readonly GUIContent buttonContent = EditorGUIUtility.IconContent("d_ScriptableObject On Icon");
+		private const int buttonWidth = 16;
 
 		public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
 		{
@@ -106,7 +107,7 @@ namespace ScriptableData.Editor
 					propertyRect.width -= buttonWidth;
 
 					// Draw create button.
-					Rect buttonRect = new Rect(position.x + position.width - buttonWidth, position.y, buttonWidth, EditorGUIUtility.singleLineHeight);
+					Rect buttonRect = new Rect(position.x + position.width - buttonWidth, position.y + 1, buttonWidth, EditorGUIUtility.singleLineHeight);
 					DrawScriptableObjectCreateButton(buttonRect, property, fieldType);
 				}
 			}
@@ -126,7 +127,7 @@ namespace ScriptableData.Editor
 
 		private static void DrawScriptableObjectCreateButton(Rect position, SerializedProperty property, Type type)
 		{
-			if (GUI.Button(position, "+"))
+			if (GUI.Button(position, buttonContent, EditorStyles.iconButton))
 			{
 				GenericMenu typeChooser = new GenericMenu();
 				IEnumerable<Type> types = type.Assembly.GetTypes().Where(t => type.IsAssignableFrom(t));
